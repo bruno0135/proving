@@ -17,6 +17,11 @@ by Jeffery Myers is marked with CC0 1.0. To view a copy of this license, visit h
 #include <cstdlib>
 #include <ctime>
 
+// Define Direction enum outside or before using it
+enum class Direction {
+    DERECHA, IZQUIERDA, ARRIBA, ABAJO, NINGUNA
+};
+
 class Bloque {
 public:
     Rectangle rect;
@@ -25,7 +30,7 @@ public:
     bool destruible;
 
     Bloque(float x, float y, float width, float height, Color col, bool hielo = false, bool destruct = true);
-    void dibujar() const; // Added const qualifier
+    void dibujar() const;
 };
 
 class Enemigo {
@@ -36,7 +41,7 @@ public:
 
     Enemigo(float x, float y);
     void mover(const std::vector<Bloque>& bloques);
-    void dibujar() const; // Added const qualifier
+    void dibujar() const;
 };
 
 class Pengo {
@@ -47,10 +52,6 @@ private:
     bool puedeEmpujar;
     bool empujando;
     Direction ultimaDireccion;
-
-    enum class Direction {
-        DERECHA, IZQUIERDA, ARRIBA, ABAJO, NINGUNA
-    };
 
 public:
     Pengo(float x, float y);
@@ -63,6 +64,83 @@ public:
     bool intentarRomperBloque(std::vector<Bloque>& bloques);
     void actualizarDireccion();
 };
+
+// Bloque method implementations
+Bloque::Bloque(float x, float y, float width, float height, Color col, bool hielo, bool destruct)
+    : rect({
+        static_cast<float>(x),
+        static_cast<float>(y),
+        static_cast<float>(width),
+        static_cast<float>(height)
+        }),
+    color(col),
+    esHielo(hielo),
+    destruible(destruct) {}
+
+void Bloque::dibujar() const {
+    DrawRectangleRec(rect, color);
+}
+
+// Enemigo method implementations
+Enemigo::Enemigo(float x, float y)
+    : rect({
+        static_cast<float>(x),
+        static_cast<float>(y),
+        32.0f,
+        32.0f
+        }),
+    velocidad(2.0f),
+    color(RED) {}
+
+void Enemigo::mover(const std::vector<Bloque>& bloques) {
+    // Movimiento aleatorio simple
+    int direccion = rand() % 4;
+
+    Rectangle nuevaPosicion = rect;
+    switch (direccion) {
+    case 0: nuevaPosicion.x += static_cast<float>(velocidad); break; // Derecha
+    case 1: nuevaPosicion.x -= static_cast<float>(velocidad); break; // Izquierda
+    case 2: nuevaPosicion.y += static_cast<float>(velocidad); break; // Abajo
+    case 3: nuevaPosicion.y -= static_cast<float>(velocidad); break; // Arriba
+    }
+
+    // Verificar colisiones con bloques
+    bool colision = false;
+    for (const auto& bloque : bloques) {
+        if (CheckCollisionRecs(nuevaPosicion, bloque.rect)) {
+            colision = true;
+            break;
+        }
+    }
+
+    // Actualizar posición si no hay colisión
+    if (!colision) {
+        rect = nuevaPosicion;
+    }
+}
+
+void Enemigo::dibujar() const {
+    DrawRectangleRec(rect, color);
+}
+
+// Pengo method implementations
+Pengo::Pengo(float x, float y)
+    : rect({
+        static_cast<float>(x),
+        static_cast<float>(y),
+        32.0f,
+        32.0f
+        }),
+    velocidad(5.0f),
+    vidas(3),
+    puedeEmpujar(true),  // Changed to true
+    empujando(false),
+    ultimaDireccion(Direction::NINGUNA) {}  // Initialize ultimaDireccion
+
+// Implementing the methods defined in the class
+Rectangle Pengo::getRect() const { return rect; }
+int Pengo::getVidas() const { return vidas; }
+void Pengo::perderVida() { vidas--; }
 
 // Implementación de las técnicas de Pengo
 void Pengo::mover(std::vector<Bloque>& bloques) {
@@ -204,118 +282,6 @@ public:
     void dibujar();
     void ejecutar();
 };
-
-// Bloque method implementations
-Bloque::Bloque(float x, float y, float width, float height, Color col, bool hielo, bool destruct)
-    : rect({
-        static_cast<float>(x),
-        static_cast<float>(y),
-        static_cast<float>(width),
-        static_cast<float>(height)
-        }),
-    color(col),
-    esHielo(hielo),
-    destruible(destruct) {}
-
-void Bloque::dibujar() const {
-    DrawRectangleRec(rect, color);
-}
-
-// Enemigo method implementations
-Enemigo::Enemigo(float x, float y)
-    : rect({
-        static_cast<float>(x),
-        static_cast<float>(y),
-        32.0f,
-        32.0f
-        }),
-    velocidad(2.0f),
-    color(RED) {}
-
-void Enemigo::mover(const std::vector<Bloque>& bloques) {
-    // Movimiento aleatorio simple
-    int direccion = rand() % 4;
-
-    Rectangle nuevaPosicion = rect;
-    switch (direccion) {
-    case 0: nuevaPosicion.x += static_cast<float>(velocidad); break; // Derecha
-    case 1: nuevaPosicion.x -= static_cast<float>(velocidad); break; // Izquierda
-    case 2: nuevaPosicion.y += static_cast<float>(velocidad); break; // Abajo
-    case 3: nuevaPosicion.y -= static_cast<float>(velocidad); break; // Arriba
-    }
-
-    // Verificar colisiones con bloques
-    bool colision = false;
-    for (const auto& bloque : bloques) {
-        if (CheckCollisionRecs(nuevaPosicion, bloque.rect)) {
-            colision = true;
-            break;
-        }
-    }
-
-    // Actualizar posición si no hay colisión
-    if (!colision) {
-        rect = nuevaPosicion;
-    }
-}
-
-void Enemigo::dibujar() const {
-    DrawRectangleRec(rect, color);
-}
-
-// Pengo method implementations
-Pengo::Pengo(float x, float y)
-    : rect({
-        static_cast<float>(x),
-        static_cast<float>(y),
-        32.0f,
-        32.0f
-        }),
-    velocidad(5.0f),
-    vidas(3),
-    puedeEmpujar(false) {}
-
-void Pengo::mover(const std::vector<Bloque>& bloques) {
-    Rectangle nuevaPosicion = rect;
-
-    // Movimiento con flechas
-    if (IsKeyDown(KEY_RIGHT)) nuevaPosicion.x += static_cast<float>(velocidad);
-    if (IsKeyDown(KEY_LEFT))  nuevaPosicion.x -= static_cast<float>(velocidad);
-    if (IsKeyDown(KEY_DOWN))  nuevaPosicion.y += static_cast<float>(velocidad);
-    if (IsKeyDown(KEY_UP))    nuevaPosicion.y -= static_cast<float>(velocidad);
-
-    // Verificar colisiones con bloques
-    bool colision = false;
-    for (const auto& bloque : bloques) {
-        if (CheckCollisionRecs(nuevaPosicion, bloque.rect)) {
-            colision = true;
-
-            // Lógica de empuje de bloques
-            if (puedeEmpujar && bloque.destruible) {
-                // Implementar lógica de empuje de bloques
-            }
-            break;
-        }
-    }
-
-    // Actualizar posición si no hay colisión
-    if (!colision) {
-        rect = nuevaPosicion;
-    }
-}
-
-void Pengo::dibujar() const {
-    DrawRectangleRec(rect, BLUE);
-
-    // Dibujar vidas
-    for (int i = 0; i < vidas; i++) {
-        DrawRectangle(10 + i * 40, 10, 30, 30, GREEN);
-    }
-}
-
-Rectangle Pengo::getRect() const { return rect; }
-int Pengo::getVidas() const { return vidas; }
-void Pengo::perderVida() { vidas--; }
 
 // Juego method implementations
 Juego::Juego()
